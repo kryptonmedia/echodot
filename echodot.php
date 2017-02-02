@@ -347,8 +347,12 @@ if(!$result = $mysqli->query($sql))
 		extra information that's been added through all the conversion processes.
 		It's been placed here for reference only.
 		
-		/&nbsp;/ig
-		/&rsquo;/ig
+		/&nbsp;/i
+		/&rsquo;/i
+		/&ndash;/i
+		/&ldquo;/i
+		/&rdquo;/i
+		
 		/(https:\\\\\/\\\\\/kryptonradio.com\\\\\/)/i
 		/(    )/i
 		
@@ -374,6 +378,9 @@ if(!$result = $mysqli->query($sql))
 		*/
 		$jString = preg_replace("/&nbsp;/i"," ",$jString);
 		$jString = preg_replace("/&rsquo;/i","'",$jString);
+		$jString = preg_replace("/&ndash;/i","-",$jString);
+		$jString = preg_replace("/&ldquo;/i","\"",$jString);
+		$jString = preg_replace("/&rdquo;/i","\"",$jString);
 		$jString = preg_replace("/(https:\\\\\/\\\\\/kryptonradio.com\\\\\/)/i","https://kryptonradio.com/",$jString);
 		$jString = preg_replace("/(    )/i"," ",$jString);
 		
