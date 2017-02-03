@@ -379,8 +379,8 @@ if(!$result = $mysqli->query($sql))
 		$jString = preg_replace("/&nbsp;/i"," ",$jString);
 		$jString = preg_replace("/&rsquo;/i","'",$jString);
 		$jString = preg_replace("/&ndash;/i","-",$jString);
-		$jString = preg_replace("/&ldquo;/i","\"",$jString);
-		$jString = preg_replace("/&rdquo;/i","\"",$jString);
+		$jString = preg_replace("/&ldquo;/i","",$jString);
+		$jString = preg_replace("/&rdquo;/i","",$jString);
 		$jString = preg_replace("/(https:\\\\\/\\\\\/kryptonradio.com\\\\\/)/i","https://kryptonradio.com/",$jString);
 		$jString = preg_replace("/(    )/i"," ",$jString);
 		
