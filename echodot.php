@@ -319,7 +319,7 @@ if(!$result = $mysqli->query($sql))
 		// Create the opening byline for Alexa
 		$strStart = "Here's the news from Krypton Radio for " . $fDate . ".";
 		// Add a period to the end of the title, for inclusion in the main body text.
-		$strTitle = $row['post_title'] . ".";
+		$strTitle = $row['post_title'] . ". ";
 		// Add the boiler plate output to the end.
 		$strBoiler = "For more geek news, visit Krypton radio at krypton radio dot com. It's Sci-fi, for your Wifi.";
 		// Combine the above three into the finalOutput variable; this can be used with the title as it is
@@ -352,9 +352,13 @@ if(!$result = $mysqli->query($sql))
 		/&ndash;/i
 		/&ldquo;/i
 		/&rdquo;/i
+        /&quot;/i
+        /&hellip;/i
 		
 		/(https:\\\\\/\\\\\/kryptonradio.com\\\\\/)/i
 		/(    )/i
+        /\[\b.*?]/i
+        
 		
 		*/
 		
@@ -381,8 +385,12 @@ if(!$result = $mysqli->query($sql))
 		$jString = preg_replace("/&ndash;/i","-",$jString);
 		$jString = preg_replace("/&ldquo;/i","",$jString);
 		$jString = preg_replace("/&rdquo;/i","",$jString);
+        $jString = preg_replace("/&quot;/i","",$jString);
+        $jString = preg_replace("/&hellip;/i","...",$jString);
 		$jString = preg_replace("/(https:\\\\\/\\\\\/kryptonradio.com\\\\\/)/i","https://kryptonradio.com/",$jString);
 		$jString = preg_replace("/(    )/i"," ",$jString);
+        $jString = preg_replace("/\[\b.*?]/i","",$jString);
+        
 		
 		// Output the final JSON object to the screen.
 		echo $jString;

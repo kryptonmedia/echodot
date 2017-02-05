@@ -315,6 +315,8 @@ if(!$result = $mysqli->query($sql))
 		echo "Post Date Formatted: " . $fDate . "<br>";
 		echo "Amazon Date: " . $amazonDate . "<br>";
 		echo "Post Status: " . $row['post_status'] . "<br><br>";
+        
+        echo "Hellip: &hellip;";
 		
 	
 		$tmp = strip_caption_content($row['post_content']);
