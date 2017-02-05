@@ -272,7 +272,7 @@ if($mysqli->connect_errno)
 	exit;
 }
 
-$sql= "SELECT ID, post_date, post_date_gmt, post_content, post_title, post_status, guid FROM wp_posts WHERE post_status='publish' ORDER BY post_date DESC LIMIT 5;";
+$sql= "SELECT ID, post_date, post_date_gmt, post_content, post_title, post_status, guid FROM wp_posts WHERE post_status='publish' ORDER BY post_date DESC LIMIT 10;";
 if(!$result = $mysqli->query($sql))
 {
 	// This error message is for testing purposes only. It will either fail silently or
@@ -287,11 +287,15 @@ if(!$result = $mysqli->query($sql))
 	while($row = $result->fetch_assoc())
 	{
 		
-		if( (stristr($row['post_content'],"https://you",true) !== false) || (stristr($row['post_content'], "http://you",true) !== false) || (stristr($row['post_content'], "http://www.you",true) !== false) || (stristr($row['post_content'], "https://www.you",true) !== false))
+		if( (stristr($row['post_content'],"https://you",true) !== false) || 
+		      (stristr($row['post_content'], "https://www.you",true) !== false) ||
+		    strlen($row['post_content'])>=4300 )
 		{
 			continue;
 		}
-		
+        
+        $strLength = strlen($row['post_content']);
+        
 		//$UUID = "urn:uuid:" . getGUID($row['ID']);
 		$tmpUid = UUID::v4();
 		if(UUID::is_valid($tmpUid)) {
@@ -311,12 +315,15 @@ if(!$result = $mysqli->query($sql))
 		echo "<h1>Post Title: " . $row['post_title'] . "</h1><br>";
 		echo "ID: " . $row['ID'] . "<br>";
 		echo "UUID: " . $UUID . "<br>";
+        if($strLength <= 4300) {
+            echo "Length is less than 4200 characters: " . $strLength . "<br>";
+        } else {
+            echo "Length is greater than 4200 characters: " . $strLength . "<br>";
+        }
 		echo "Post Date Raw: " . $row['post_date'] . "<br>";
 		echo "Post Date Formatted: " . $fDate . "<br>";
 		echo "Amazon Date: " . $amazonDate . "<br>";
 		echo "Post Status: " . $row['post_status'] . "<br><br>";
-        
-        echo "Hellip: &hellip;";
 		
 	
 		$tmp = strip_caption_content($row['post_content']);
