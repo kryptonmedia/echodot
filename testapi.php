@@ -257,6 +257,9 @@ function w1250_to_utf8($text) {
 		} 
 		return $text; 
 	}
+    function replace_youtube_link($text) {
+        return preg_replace('/https:\/\/www.you(.+?)[\s]/i', 'Watch the video on our website. ',$text);
+    }
 
 // Connect to the database using predefined variables
 $mysqli = new mysqli('localhost','gamma','gamma','kryptonradio');
@@ -287,12 +290,21 @@ if(!$result = $mysqli->query($sql))
 	while($row = $result->fetch_assoc())
 	{
 		
-		if( (stristr($row['post_content'],"https://you",true) !== false) || 
-		      (stristr($row['post_content'], "https://www.you",true) !== false) ||
+        if(strlen($row['post_content']>=4300)){
+            continue;
+        } else if( (stristr($row['post_content'],"https://you",true) !== false) ||  (stristr($row['post_content'], "https://www.you",true) !== false) ) {
+            $copyOutput = replace_youtube_link($row['post_content']);
+        } else {
+            $copyOutput = $row['post_content'];
+        }
+        
+        /*
+		if( (stristr($row['post_content'],"https://you",true) !== false) ||  (stristr($row['post_content'], "https://www.you",true) !== false) ||
 		    strlen($row['post_content'])>=4300 )
 		{
 			continue;
 		}
+        */
         
         $strLength = strlen($row['post_content']);
         
@@ -325,8 +337,10 @@ if(!$result = $mysqli->query($sql))
 		echo "Amazon Date: " . $amazonDate . "<br>";
 		echo "Post Status: " . $row['post_status'] . "<br><br>";
 		
-	
-		$tmp = strip_caption_content($row['post_content']);
+           
+        $tmp = strip_caption_content($copyOutput);
+		//$tmp = strip_caption_content($row['post_content']);
+        //$tmp = replace_youtube_link($tmp);
 		$tmp = strip_tags($tmp);
 		$tmp = str_replace("-30-",'',$tmp);
 		$text = w1250_to_utf8($tmp);
@@ -341,6 +355,7 @@ if(!$result = $mysqli->query($sql))
 		
 		$jsonOut["mainText"] = str_replace("\n"," ",$jsonOut["mainText"]);
 		$jsonOut["mainText"] = htmlentities($jsonOut["mainText"]);
+        
 		
 		/*
 		/&nbsp;/ig

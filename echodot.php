@@ -205,6 +205,19 @@ function strip_caption_content($text, $tags = '', $invert = FALSE)
 }
 
 /**
+* This function was written to replace a youtube link in an article with
+* the verbage "Watch the video on our website".
+* Note the space at the end of the replacement text (middle parameter of
+* the preg_replace function); this is due to the regex expression removing
+* the space as well as the link.
+* 
+* @param text		The post's text to replace a youtube link in.
+*/
+function replace_youtube_link($text) {
+    return preg_replace('/https:\/\/www.you(.+?)[\s]/i', 'Watch the video on our website. ',$text);
+}
+
+/**
 * Connects to the MySQL database using the OOP {@link mysqli} object
 * 
 * @param	hostname	The name of the host to connect to
@@ -235,14 +248,19 @@ if(!$result = $mysqli->query($sql))
 	// Start the loop to cycle through the returned records
 	while($row = $result->fetch_assoc())
 	{
-		// Check to see if the current record includes an embedded video
-		if( (stristr($row['post_content'],"https://you",true) !== false) || 
-		      (stristr($row['post_content'], "https://www.you",true) !== false) ||
-		    strlen($row['post_content'])>=4300 )
-		{
-			// If the selected post has embedded video, we skip over it and start the check on the next post.
-			continue;
-		}
+		// Check to see if the post is longer than 4300 characters.
+        // Alexa can currently read up to 4500 characters.
+		if(strlen($row['post_content']>=4300)){
+            // If the post is too long, skip it.
+            continue;
+        // Check to see if the current record includes an embedded video
+        } else if( (stristr($row['post_content'],"https://you",true) !== false) ||  (stristr($row['post_content'], "https://www.you",true) !== false) ) {
+            // If there is an embedded video, replace the link with verbage to visit the website.
+            $copyOutput = replace_youtube_link($row['post_content']);
+        } else {
+            // Otherwise we just read the entire post into a variable.
+            $copyOutput = $row['post_content'];
+        }
 		
 		/**
 		* Takes the PST posted time and converts it into a human-readable date string.
@@ -296,7 +314,7 @@ if(!$result = $mysqli->query($sql))
 		*
 		* @see #strip_caption_content(text)
 		*/
-		$tmp = strip_caption_content($row['post_content']);
+		$tmp = strip_caption_content($copyOutput);
 		/**
 		* Strips the remaining HTML tags out of the post's body.
 		*
@@ -354,7 +372,7 @@ if(!$result = $mysqli->query($sql))
 		/&rdquo;/i
         /&quot;/i
         /&hellip;/i
-		
+        
 		/(https:\\\\\/\\\\\/kryptonradio.com\\\\\/)/i
 		/(    )/i
         /\[\b.*?]/i
