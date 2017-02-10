@@ -258,7 +258,10 @@ function w1250_to_utf8($text) {
 		return $text; 
 	}
     function replace_youtube_link($text) {
-        return preg_replace('/https:\/\/www.you(.+?)[\s]/i', 'Watch the video on our website. ',$text);
+		$tmp = $text;
+		$tmp = preg_replace('/https:\/\/www.you(.+?)[\s]/i', 'Watch the video on our website. ',$tmp);
+        $tmp = preg_replace('/https:\/\/you(.+?)[\s]/i', 'Watch the video on our website. ',$tmp);
+		return $tmp;
     }
 
 // Connect to the database using predefined variables
@@ -296,6 +299,7 @@ if(!$result = $mysqli->query($sql))
             $copyOutput = replace_youtube_link($row['post_content']);
         } else {
             $copyOutput = $row['post_content'];
+			//continue;
         }
         
         /*
@@ -345,8 +349,8 @@ if(!$result = $mysqli->query($sql))
 		$tmp = str_replace("-30-",'',$tmp);
 		$text = w1250_to_utf8($tmp);
 		
-		$strStart = "Here's the news from Krypton Radio for " . $fDate . ".";
-		$strTitle = $row['post_title'] . ".";
+		$strStart = "Here's the news from Krypton Radio for " . $fDate . ". ";
+		$strTitle = $row['post_title'] . ". ";
 		$strBoiler = "Krypton radio dot com is listener supported sci-fi and geek culture radio. It's Sci-fi for your Wifi.";
 		//$finalOutput = $strStart . $text . $strBoiler;
 		$finalOutput = $strStart . $strTitle . $text;

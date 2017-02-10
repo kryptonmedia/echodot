@@ -214,7 +214,10 @@ function strip_caption_content($text, $tags = '', $invert = FALSE)
 * @param text		The post's text to replace a youtube link in.
 */
 function replace_youtube_link($text) {
-    return preg_replace('/https:\/\/www.you(.+?)[\s]/i', 'Watch the video on our website. ',$text);
+		$tmp = $text;
+		$tmp = preg_replace('/https:\/\/www.you(.+?)[\s]/i', 'Watch the video on our website. ',$tmp);
+        $tmp = preg_replace('/https:\/\/you(.+?)[\s]/i', 'Watch the video on our website. ',$tmp);
+		return $tmp;
 }
 
 /**
