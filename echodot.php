@@ -338,7 +338,7 @@ if(!$result = $mysqli->query($sql))
 		$text = w1250_to_utf8($tmp);
 		
 		// Create the opening byline for Alexa
-		$strStart = "Here's the news from Krypton Radio for " . $fDate . ".";
+		$strStart = "Here's the news from Krypton Radio for " . $fDate . ". ";
 		// Add a period to the end of the title, for inclusion in the main body text.
 		$strTitle = $row['post_title'] . ". ";
 		// Add the boiler plate output to the end.
