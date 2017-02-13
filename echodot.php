@@ -239,7 +239,7 @@ if($mysqli->connect_errno)
 
 // The SQL statement to send to the database, selecting the appropriate fields from
 // the WordPress posts table.
-$sql= "SELECT ID, post_date, post_date_gmt, post_content, post_title, post_status, guid FROM wp_posts WHERE post_status='publish' ORDER BY post_date DESC LIMIT 5;";
+$sql= "SELECT ID, post_date_gmt, post_content, post_title, post_status, guid FROM wp_posts WHERE post_status='publish' AND post_type='post' ORDER BY post_date DESC LIMIT 5;";
 // We weren't able to return any records, which means we have a problem
 if(!$result = $mysqli->query($sql))
 {

@@ -278,7 +278,7 @@ if($mysqli->connect_errno)
 	exit;
 }
 
-$sql= "SELECT ID, post_date, post_date_gmt, post_content, post_title, post_status, guid FROM wp_posts WHERE post_status='publish' ORDER BY post_date DESC LIMIT 10;";
+$sql= "SELECT ID, post_date_gmt, post_content, post_title, post_status, guid FROM wp_posts WHERE post_status='publish' AND post_type='post' ORDER BY post_date DESC LIMIT 5;";
 if(!$result = $mysqli->query($sql))
 {
 	// This error message is for testing purposes only. It will either fail silently or
