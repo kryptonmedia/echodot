@@ -362,10 +362,19 @@ if(!$result = $mysqli->query($sql))
         
 		
 		/*
-		/&nbsp;/ig
-		/&rsquo;/ig
+		/&nbsp;/i
+		/&rsquo;/i
+		/&ndash;/i
+		/&mdash;/i
+		/&emdash;/i
+		/&ldquo;/i
+		/&rdquo;/i
+        /&quot;/i
+        /&hellip;/i
+        
 		/(https:\\\\\/\\\\\/kryptonradio.com\\\\\/)/i
 		/(    )/i
+        /\[\b.*?]/i
 		*/
 		
 		
@@ -380,8 +389,16 @@ if(!$result = $mysqli->query($sql))
 		$jString=json_encode($jsonOut);
 		$jString = preg_replace("/&nbsp;/i"," ",$jString);
 		$jString = preg_replace("/&rsquo;/i","'",$jString);
+		$jString = preg_replace("/&ndash;/i","-",$jString);
+		$jString = preg_replace("/&mdash;/i","-",$jString);
+		$jString = preg_replace("/&emdash;/i","-",$jString);
+		$jString = preg_replace("/&ldquo;/i","",$jString);
+		$jString = preg_replace("/&rdquo;/i","",$jString);
+        $jString = preg_replace("/&quot;/i","",$jString);
+        $jString = preg_replace("/&hellip;/i","...",$jString);
 		$jString = preg_replace("/(https:\\\\\/\\\\\/kryptonradio.com\\\\\/)/i","https://kryptonradio.com/",$jString);
 		$jString = preg_replace("/(    )/i"," ",$jString);
+        $jString = preg_replace("/\[\b.*?]/i","",$jString);
 		
 		echo $jString;
 		echo "<br><br><br><br><br><br><br><br><br><br>";

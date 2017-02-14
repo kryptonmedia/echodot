@@ -371,6 +371,8 @@ if(!$result = $mysqli->query($sql))
 		/&nbsp;/i
 		/&rsquo;/i
 		/&ndash;/i
+		/&mdash;/i
+		/&emdash;/i
 		/&ldquo;/i
 		/&rdquo;/i
         /&quot;/i
@@ -379,7 +381,6 @@ if(!$result = $mysqli->query($sql))
 		/(https:\\\\\/\\\\\/kryptonradio.com\\\\\/)/i
 		/(    )/i
         /\[\b.*?]/i
-        
 		
 		*/
 		
@@ -404,6 +405,8 @@ if(!$result = $mysqli->query($sql))
 		$jString = preg_replace("/&nbsp;/i"," ",$jString);
 		$jString = preg_replace("/&rsquo;/i","'",$jString);
 		$jString = preg_replace("/&ndash;/i","-",$jString);
+		$jString = preg_replace("/&mdash;/i","-",$jString);
+		$jString = preg_replace("/&emdash;/i","-",$jString);
 		$jString = preg_replace("/&ldquo;/i","",$jString);
 		$jString = preg_replace("/&rdquo;/i","",$jString);
         $jString = preg_replace("/&quot;/i","",$jString);
