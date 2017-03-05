@@ -214,10 +214,66 @@ function strip_caption_content($text, $tags = '', $invert = FALSE)
 * @param text		The post's text to replace a youtube link in.
 */
 function replace_youtube_link($text) {
-		$tmp = $text;
-		$tmp = preg_replace('/https:\/\/www.you(.+?)[\s]/i', 'Watch the video on our website. ',$tmp);
-        $tmp = preg_replace('/https:\/\/you(.+?)[\s]/i', 'Watch the video on our website. ',$tmp);
-		return $tmp;
+	$tmp = $text;
+	$tmp = preg_replace('/https:\/\/www.you(.+?)[\s]/i', 'Watch the video on our website. ',$tmp);
+	$tmp = preg_replace('/https:\/\/you(.+?)[\s]/i', 'Watch the video on our website. ',$tmp);
+	return $tmp;
+}
+
+/**
+* This function was written to replace a Twitter link in an article with
+* the verbage "See the picture on our website".
+* Note the space at the end of the replacement text (middle parameter of
+* the preg_replace function); this is due to the regex expression removing
+* the space as well as the link.
+* 
+* @param text		The post's text to replace a youtube link in.
+*/
+function replace_twitter_link($text) {
+	$tmp = $text;
+	$tmp = preg_replace('/https:\/\/www.twitter(.+?)[\s]/i', 'View the picture on our website. ',$tmp);
+	$tmp = preg_replace('/https:\/\/twitter(.+?)[\s]/i', 'View the picture on our website. ',$tmp);
+	return $tmp;
+}
+/**
+* This function sanitizes a post that may have embedded twitter content.
+* Due to the nature of these posts, it's not feasible to initially strip out
+* the HTML tags, and one must manually remove the <a></a> links (the first
+* two preg_replace functions) before removing the rest of the tags from the
+* post. The function then replaces the @ and # symbols with "at " and "hash tag "
+* respectively. Please note the space after each replacement; this is for
+* ease of reading for Alexa.
+* Finally, the function removes the left over "pic.twitter" shortened URL
+* from the post. Due to the possibility of variables changing, the link to
+* remove has only been semi-hard coded in, and the prefix as well as the actual
+* shortened URL are being searched via a regex rule.
+* 
+* @param text		The post's text to replace a youtube link in.
+*/
+function fix_twitter($text) {
+	// Assign the input to a temporary variable
+	$tmp = $text;
+	// Replace the start of a Twitter post with a blurb denoting that we're about
+	// to read a post.
+	$tmp = preg_replace("/<blockquote(.+?)[>]/i","The post on Twitter said: ",$tmp);
+	// Strip the opening <a> tag from the links
+	$tmp = preg_replace('/<a\shref=(.+?)[\s]*\/?[\s]*>/i','',$tmp);
+	// Strip the closing </a> tag from the links
+	$tmp = preg_replace('/<\/a>/i','',$tmp);
+	// Strip the remaining HTML tags from the string
+	$tmp = strip_tags($tmp);
+	// Replace the weird HTML apostrophes with a '
+	$tmp = preg_replace("/&#39;/i","'",$tmp);
+	// Replace the ***.twitter.com/<shortened url> string with nothing
+	$tmp = preg_replace('(\s[a-z{3}]*+.twitter\.com[^\s]+)','',$tmp);
+	// Remove all the remaining HTTP links from the article.
+	$tmp = preg_replace('(http[a-z{1}]*+.[^\s]+)','',$tmp);
+	// Change @ symbol to read "at" with a trailing space for Alexa
+	$tmp = str_replace("@","at ",$tmp);
+	// Change # symbol to read "hash tag " with a trailing space for Alexa
+	$tmp = str_replace("#", "hash tag ",$tmp);
+	// Return the temporary variable to our calling code.
+	return $tmp;
 }
 
 /**
@@ -239,7 +295,7 @@ if($mysqli->connect_errno)
 
 // The SQL statement to send to the database, selecting the appropriate fields from
 // the WordPress posts table.
-$sql= "SELECT ID, post_date_gmt, post_content, post_title, post_status, guid FROM wp_posts WHERE post_status='publish' AND post_type='post' ORDER BY post_date DESC LIMIT 5;";
+$sql= "SELECT ID, post_date, post_date_gmt, post_content, post_title, post_status, guid FROM wp_posts WHERE post_status='publish' AND post_type='post' ORDER BY post_date DESC LIMIT 5;";
 // We weren't able to return any records, which means we have a problem
 if(!$result = $mysqli->query($sql))
 {
@@ -252,7 +308,7 @@ if(!$result = $mysqli->query($sql))
 	while($row = $result->fetch_assoc())
 	{
 		// Check to see if the post is longer than 4300 characters.
-        // Alexa can currently read up to 4500 characters.
+		// Alexa can currently read up to 4500 characters.
 		if(strlen($row['post_content']>=4300)){
             // If the post is too long, skip it.
             continue;
@@ -260,9 +316,13 @@ if(!$result = $mysqli->query($sql))
         } else if( (stristr($row['post_content'],"https://you",true) !== false) ||  (stristr($row['post_content'], "https://www.you",true) !== false) ) {
             // If there is an embedded video, replace the link with verbage to visit the website.
             $copyOutput = replace_youtube_link($row['post_content']);
+		} else if( (stristr($row['post_content'],"https://twitter",true) !== false) || (stristr($row['post_content'],"https://www.twitter",true) !==false) ) {
+			// If there are twitter links embedded in the article, replace the link with verbage to visit the website.
+			$copyOutput = replace_twitter_link($row['post_content']);
         } else {
             // Otherwise we just read the entire post into a variable.
             $copyOutput = $row['post_content'];
+			//continue;
         }
 		
 		/**
@@ -320,10 +380,20 @@ if(!$result = $mysqli->query($sql))
 		$tmp = strip_caption_content($copyOutput);
 		/**
 		* Strips the remaining HTML tags out of the post's body.
+		* This has been commented out, but left inline for future
+		* reference. fix_twitter(text) now 
 		*
 		* @see php.net#strip_tags(string)
 		*/
-		$tmp = strip_tags($tmp);
+		//$tmp = strip_tags($tmp);
+		/**
+		* Sanitizes a post from all embedded Twitter information,
+		* changing @ and # to the more TTS readable "at" and "hash
+		* tag".
+		*
+		* @see #strip_caption_content(text)
+		*/
+		$tmp = fix_twitter($tmp);
 		/**
 		* Removes the -30- end code from the bottom of the post.
 		*
@@ -340,7 +410,7 @@ if(!$result = $mysqli->query($sql))
 		// Create the opening byline for Alexa
 		$strStart = "Here's the news from Krypton Radio for " . $fDate . ". ";
 		// Add a period to the end of the title, for inclusion in the main body text.
-		$strTitle = $row['post_title'] . ". ";
+		$strTitle =$row['post_title'] . ". ";
 		// Add the boiler plate output to the end.
 		$strBoiler = "For more geek news, visit Krypton radio at krypton radio dot com. It's Sci-fi, for your Wifi.";
 		// Combine the above three into the finalOutput variable; this can be used with the title as it is
@@ -374,13 +444,19 @@ if(!$result = $mysqli->query($sql))
 		/&mdash;/i
 		/&emdash;/i
 		/&ldquo;/i
+		/&lsquo;/i
 		/&rdquo;/i
         /&quot;/i
         /&hellip;/i
         
-		/(https:\\\\\/\\\\\/kryptonradio.com\\\\\/)/i
+		/(http|https)(:\\\\\/\\\\\/kryptonradio.com\\\\\/)/i
 		/(    )/i
+		/(   )/i
+		
         /\[\b.*?]/i
+		
+		(\\")
+		/\\\\\//i
 		
 		*/
 		
@@ -408,12 +484,17 @@ if(!$result = $mysqli->query($sql))
 		$jString = preg_replace("/&mdash;/i","-",$jString);
 		$jString = preg_replace("/&emdash;/i","-",$jString);
 		$jString = preg_replace("/&ldquo;/i","",$jString);
+		$jString = preg_replace("/&lsquo;/i","",$jString);
 		$jString = preg_replace("/&rdquo;/i","",$jString);
         $jString = preg_replace("/&quot;/i","",$jString);
         $jString = preg_replace("/&hellip;/i","...",$jString);
-		$jString = preg_replace("/(https:\\\\\/\\\\\/kryptonradio.com\\\\\/)/i","https://kryptonradio.com/",$jString);
+		$jString = preg_replace("/&amp;/i","&",$jString);
+		$jString = preg_replace("/(http|https)(:\\\\\/\\\\\/kryptonradio.com\\\\\/)/i","http://kryptonradio.com/",$jString);
 		$jString = preg_replace("/(    )/i"," ",$jString);
+		$jString = preg_replace("/(   )/i"," ",$jString);
         $jString = preg_replace("/\[\b.*?]/i","",$jString);
+		$jString = preg_replace('(\\\")',"",$jString);
+		$jString = preg_replace("/\\\\\//i","/",$jString);
         
 		
 		// Output the final JSON object to the screen.

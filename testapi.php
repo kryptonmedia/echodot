@@ -263,6 +263,32 @@ function w1250_to_utf8($text) {
         $tmp = preg_replace('/https:\/\/you(.+?)[\s]/i', 'Watch the video on our website. ',$tmp);
 		return $tmp;
     }
+	function replace_twitter_link($text) {
+			$tmp = $text;
+			$tmp = preg_replace('/https:\/\/www.twitter(.+?)[\s]/i', 'View the picture on our website. ',$tmp);
+			$tmp = preg_replace('/https:\/\/twitter(.+?)[\s]/i', 'View the picture on our website. ',$tmp);
+			return $tmp;
+	}
+
+	function fix_twitter($text) {
+		$tmp = $text;
+		// Strip the opening <a> tag from the links
+		$tmp = preg_replace('/<a\shref=(.+?)[\s]*\/?[\s]*>/i','',$tmp);
+		// Strip the closing </a> tag from the links
+		$tmp = preg_replace('/<\/a>/i','',$tmp);
+		// Strip the remaining HTML tags from the string
+		$tmp = strip_tags($tmp);
+		$tmp = preg_replace("/&#39;/i","'",$tmp);
+		// Replace the ***.twitter.com/<shortened url> string with nothing
+		$tmp = preg_replace('(\s[a-z{3}]*+.twitter\.com[^\s]+)','',$tmp);
+		$tmp = preg_replace('(http[a-z{1}]*+.[^\s]+)','',$tmp);
+		// Change @ symbol to read "at" with a trailing space for Alexa
+		$tmp = str_replace("@","at ",$tmp);
+		// Change # symbol to read "hash tag " with a trailing space for Alexa
+		$tmp = str_replace("#", "hash tag ",$tmp);
+
+		return $tmp;
+	}
 
 // Connect to the database using predefined variables
 $mysqli = new mysqli('localhost','gamma','gamma','kryptonradio');
@@ -278,7 +304,7 @@ if($mysqli->connect_errno)
 	exit;
 }
 
-$sql= "SELECT ID, post_date_gmt, post_content, post_title, post_status, guid FROM wp_posts WHERE post_status='publish' AND post_type='post' ORDER BY post_date DESC LIMIT 5;";
+$sql= "SELECT ID, post_date, post_date_gmt, post_content, post_title, post_status, guid FROM wp_posts WHERE post_status='publish' AND post_type='post' ORDER BY post_date DESC LIMIT 5;";
 if(!$result = $mysqli->query($sql))
 {
 	// This error message is for testing purposes only. It will either fail silently or
@@ -297,18 +323,13 @@ if(!$result = $mysqli->query($sql))
             continue;
         } else if( (stristr($row['post_content'],"https://you",true) !== false) ||  (stristr($row['post_content'], "https://www.you",true) !== false) ) {
             $copyOutput = replace_youtube_link($row['post_content']);
+		} else if( (stristr($row['post_content'],"https://twitter",true) !== false) || (stristr($row['post_content'],"https://www.twitter",true) !==false) ) {
+			// If there are twitter links embedded in the article, replace the link with verbage to visit the website.
+			$copyOutput = replace_twitter_link($row['post_content']);
         } else {
             $copyOutput = $row['post_content'];
 			//continue;
         }
-        
-        /*
-		if( (stristr($row['post_content'],"https://you",true) !== false) ||  (stristr($row['post_content'], "https://www.you",true) !== false) ||
-		    strlen($row['post_content'])>=4300 )
-		{
-			continue;
-		}
-        */
         
         $strLength = strlen($row['post_content']);
         
@@ -325,6 +346,7 @@ if(!$result = $mysqli->query($sql))
 		$gmtDate[1] = $gmtDate[1] . "Z";
 		$amazonDate = implode("T", $gmtDate);
 		
+		date_default_timezone_set("America/Los_Angeles");
 		$fDate = date('l F jS, Y', strtotime($row['post_date']));
 		
 		
@@ -343,9 +365,8 @@ if(!$result = $mysqli->query($sql))
 		
            
         $tmp = strip_caption_content($copyOutput);
-		//$tmp = strip_caption_content($row['post_content']);
-        //$tmp = replace_youtube_link($tmp);
-		$tmp = strip_tags($tmp);
+		$tmp = fix_twitter($tmp);
+		//$tmp = strip_tags($tmp);
 		$tmp = str_replace("-30-",'',$tmp);
 		$text = w1250_to_utf8($tmp);
 		
@@ -359,7 +380,24 @@ if(!$result = $mysqli->query($sql))
 		
 		$jsonOut["mainText"] = str_replace("\n"," ",$jsonOut["mainText"]);
 		$jsonOut["mainText"] = htmlentities($jsonOut["mainText"]);
-        
+		
+		$raw = $row['post_content'];
+		$test = strip_caption_content($raw);
+		$test = w1250_to_utf8($test);
+		$test = str_replace("-30-",'',$test);
+		//$test = htmlentities($test);
+		//$test = htmlspecialchars($test);
+		//$test = strip_tags($test);
+		$test = fix_twitter($test);
+		
+		echo "Post Raw:" . $raw . "<br><br><br>";
+		echo "Post Test: " . htmlentities($test) . "<br><br><br>";
+	
+		echo "<h2>Finalized Output:</h2><br><br>";
+		echo $finalOutput;
+		echo "<br><br><br><br><br><br><br><br><br><br>";
+		
+		echo "<h2>JSON Output:</h2><br><br>";
 		
 		/*
 		/&nbsp;/i
@@ -369,36 +407,31 @@ if(!$result = $mysqli->query($sql))
 		/&emdash;/i
 		/&ldquo;/i
 		/&rdquo;/i
-        /&quot;/i
-        /&hellip;/i
+		/&quot;/i
+		/&hellip;/i
         
 		/(https:\\\\\/\\\\\/kryptonradio.com\\\\\/)/i
 		/(    )/i
-        /\[\b.*?]/i
+		/\[\b.*?]/i
 		*/
 		
-		
-		echo "Post Content: " . $text . "<br><br><br>";
-	
-		echo "<h2>Finalized Output:</h2><br><br>";
-		echo $finalOutput;
-		echo "<br><br><br><br><br><br><br><br><br><br>";
-		
-		echo "<h2>JSON Output:</h2><br><br>";
-		
-		$jString=json_encode($jsonOut);
 		$jString = preg_replace("/&nbsp;/i"," ",$jString);
 		$jString = preg_replace("/&rsquo;/i","'",$jString);
 		$jString = preg_replace("/&ndash;/i","-",$jString);
 		$jString = preg_replace("/&mdash;/i","-",$jString);
 		$jString = preg_replace("/&emdash;/i","-",$jString);
 		$jString = preg_replace("/&ldquo;/i","",$jString);
+		$jString = preg_replace("/&lsquo;/i","",$jString);
 		$jString = preg_replace("/&rdquo;/i","",$jString);
         $jString = preg_replace("/&quot;/i","",$jString);
         $jString = preg_replace("/&hellip;/i","...",$jString);
-		$jString = preg_replace("/(https:\\\\\/\\\\\/kryptonradio.com\\\\\/)/i","https://kryptonradio.com/",$jString);
+		$jString = preg_replace("/&amp;/i","&",$jString);
+		$jString = preg_replace("/(http|https)(:\\\\\/\\\\\/kryptonradio.com\\\\\/)/i","http://kryptonradio.com/",$jString);
 		$jString = preg_replace("/(    )/i"," ",$jString);
+		$jString = preg_replace("/(   )/i"," ",$jString);
         $jString = preg_replace("/\[\b.*?]/i","",$jString);
+		$jString = preg_replace('(\\\")',"",$jString);
+		$jString = preg_replace("/\\\\\//i","/",$jString);
 		
 		echo $jString;
 		echo "<br><br><br><br><br><br><br><br><br><br>";
